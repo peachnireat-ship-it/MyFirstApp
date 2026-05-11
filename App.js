@@ -1022,7 +1022,17 @@ function CategoryDetailScreen({ category, tasks, onBack, onTaskPress }) {
             <Text style={styles.statLabel}>완료됨</Text>
           </View>
         </View>
-
+		
+		{/* ── 카테고리 별 task 관리 버튼 ── */}
+        <TouchableOpacity
+          style={[styles.detailBtn, { marginHorizontal: 24, marginTop: 8, marginBottom: 8 }]}
+          onPress={() => setScreen('categorymanage')}
+          activeOpacity={0.82}
+        >
+          <Text style={styles.detailBtnText}>카테고리 별 task 관리</Text>
+          <Text style={styles.detailBtnArrow}>→</Text>
+        </TouchableOpacity>
+		
         <View style={styles.card}>
           <View style={styles.cardHeader}>
             <Text style={styles.cardTitle}>Task 목록</Text>
@@ -1321,6 +1331,193 @@ function SubTaskScreen({ task, onBack, onSave }) {
   );
 }
 
+const STATUS_PRIORITY = { '지연': 0, '진행중': 1, '대기': 2, '완료': 3 };
+const STATUS_DOT_COLORS = {
+  '진행중': '#22C55E',
+  '완료': '#5B6CF8',
+  '지연': '#EF4444',
+  '대기': '#F59E0B',
+};
+const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
+
+function MonthlyCalendarScreen({ tasks, onBack, onTaskPress }) {
+  const today = new Date();
+  const [currentYear, setCurrentYear] = useState(today.getFullYear());
+  const [currentMonth, setCurrentMonth] = useState(today.getMonth());
+  const [selectedDate, setSelectedDate] = useState(null);
+
+  const tasksByDate = {};
+  tasks.forEach(task => {
+    if (task.dueDate) {
+      if (!tasksByDate[task.dueDate]) tasksByDate[task.dueDate] = [];
+      tasksByDate[task.dueDate].push(task);
+    }
+  });
+
+  const getDayColor = (dateStr) => {
+    const dayTasks = tasksByDate[dateStr];
+    if (!dayTasks || dayTasks.length === 0) return null;
+    const top = [...dayTasks].sort((a, b) => STATUS_PRIORITY[a.status] - STATUS_PRIORITY[b.status])[0];
+    return STATUS_DOT_COLORS[top.status];
+  };
+
+  const goToPrev = () => {
+    if (currentMonth === 0) { setCurrentYear(y => y - 1); setCurrentMonth(11); }
+    else setCurrentMonth(m => m - 1);
+    setSelectedDate(null);
+  };
+  const goToNext = () => {
+    if (currentMonth === 11) { setCurrentYear(y => y + 1); setCurrentMonth(0); }
+    else setCurrentMonth(m => m + 1);
+    setSelectedDate(null);
+  };
+
+  const firstDayOfWeek = new Date(currentYear, currentMonth, 1).getDay();
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+  const monthStr = String(currentMonth + 1).padStart(2, '0');
+  const todayStr = formatDueDate(today);
+
+  const cells = [];
+  for (let i = 0; i < firstDayOfWeek; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+
+  const selectedTasks = selectedDate ? (tasksByDate[selectedDate] || []) : [];
+
+  return (
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar style="light" />
+      <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <View style={styles.screenHeader}>
+          <TouchableOpacity onPress={onBack} style={styles.backBtn} activeOpacity={0.7}>
+            <Text style={styles.backBtnText}>← 뒤로</Text>
+          </TouchableOpacity>
+          <Text style={styles.screenTitle}>월별 Task 조회</Text>
+        </View>
+
+        <View style={cal.monthNav}>
+          <TouchableOpacity onPress={goToPrev} style={cal.navBtn} activeOpacity={0.7}>
+            <Text style={cal.navArrow}>{'‹'}</Text>
+          </TouchableOpacity>
+          <Text style={cal.monthTitle}>{currentYear}년 {currentMonth + 1}월</Text>
+          <TouchableOpacity onPress={goToNext} style={cal.navBtn} activeOpacity={0.7}>
+            <Text style={cal.navArrow}>{'›'}</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={cal.calCard}>
+          <View style={cal.weekRow}>
+            {WEEKDAYS.map((d, i) => (
+              <View key={d} style={cal.weekCell}>
+                <Text style={[cal.weekText, i === 0 && cal.sunText, i === 6 && cal.satText]}>{d}</Text>
+              </View>
+            ))}
+          </View>
+          <View style={cal.grid}>
+            {cells.map((day, idx) => {
+              if (!day) return <View key={`e-${idx}`} style={cal.dayCell} />;
+              const dateStr = `${currentYear}-${monthStr}-${String(day).padStart(2, '0')}`;
+              const color = getDayColor(dateStr);
+              const isToday = dateStr === todayStr;
+              const isSelected = dateStr === selectedDate;
+              const dow = idx % 7;
+              const count = tasksByDate[dateStr]?.length || 0;
+              return (
+                <TouchableOpacity
+                  key={dateStr}
+                  style={cal.dayCell}
+                  onPress={() => setSelectedDate(selectedDate === dateStr ? null : dateStr)}
+                  activeOpacity={0.7}
+                >
+                  <View style={[
+                    cal.dayCircle,
+                    color ? { backgroundColor: color } : null,
+                    isToday && !color ? cal.todayCircle : null,
+                    isSelected ? cal.selectedRing : null,
+                  ]}>
+                    <Text style={[
+                      cal.dayNum,
+                      dow === 0 ? cal.sunNum : null,
+                      dow === 6 ? cal.satNum : null,
+                      color ? cal.dayNumOnColor : null,
+                      isToday && !color ? cal.todayNum : null,
+                    ]}>{day}</Text>
+                  </View>
+                  {count > 1 && (
+                    <View style={cal.countDot}>
+                      <Text style={cal.countDotText}>{count}</Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+
+        <View style={cal.legend}>
+          {Object.entries(STATUS_DOT_COLORS).map(([status, color]) => (
+            <View key={status} style={cal.legendItem}>
+              <View style={[cal.legendDot, { backgroundColor: color }]} />
+              <Text style={cal.legendText}>{status}</Text>
+            </View>
+          ))}
+        </View>
+
+        {selectedDate && (
+          <View style={[styles.card, { marginTop: 4 }]}>
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardTitle}>{selectedDate}</Text>
+              <View style={styles.countBadge}>
+                <Text style={styles.countBadgeText}>{selectedTasks.length}</Text>
+              </View>
+            </View>
+            {selectedTasks.length === 0 ? (
+              <Text style={styles.emptyText}>마감 Task가 없습니다.</Text>
+            ) : (
+              selectedTasks.map((task, idx) => (
+                <TouchableOpacity
+                  key={task.id}
+                  style={[styles.taskRow, idx < selectedTasks.length - 1 && styles.rowDivider]}
+                  onPress={() => onTaskPress(task)}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.taskLeft}>
+                    <View style={[
+                      styles.statusDot,
+                      task.status === '진행중' ? styles.dotGreen
+                      : task.status === '완료' ? styles.dotBlue
+                      : task.status === '지연' ? styles.dotRed
+                      : styles.dotAmber,
+                    ]} />
+                    <View>
+                      <Text style={styles.taskTitle}>{task.title}</Text>
+                      <Text style={styles.taskMeta}>{task.category ? `${task.category} · ` : ''}{task.dueDate} 마감</Text>
+                    </View>
+                  </View>
+                  <View style={[
+                    styles.pill,
+                    task.status === '진행중' ? styles.pillGreen
+                    : task.status === '완료' ? styles.pillBlue
+                    : task.status === '지연' ? styles.pillRed
+                    : styles.pillAmber,
+                  ]}>
+                    <Text style={[
+                      styles.pillText,
+                      task.status === '진행중' ? styles.pillTextGreen
+                      : task.status === '완료' ? styles.pillTextBlue
+                      : task.status === '지연' ? styles.pillTextRed
+                      : styles.pillTextAmber,
+                    ]}>{task.status}</Text>
+                  </View>
+                </TouchableOpacity>
+              ))
+            )}
+          </View>
+        )}
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
 export default function App() {
   const [screen, setScreen] = useState('home');
   const [selectedTaskId, setSelectedTaskId] = useState(null);
@@ -1557,6 +1754,16 @@ export default function App() {
     );
   }
 
+  if (screen === 'monthlycalendar') {
+    return (
+      <MonthlyCalendarScreen
+        tasks={tasks}
+        onBack={() => setScreen('home')}
+        onTaskPress={(task) => handleTaskPress(task, 'monthlycalendar')}
+      />
+    );
+  }
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar style="light" />
@@ -1600,6 +1807,17 @@ export default function App() {
             <Text style={styles.statLabel}>완료됨</Text>
           </View>
         </View>
+
+        {/* ── 월별 조회 버튼 ── */}
+        <TouchableOpacity
+          style={styles.monthlyCalBtn}
+          onPress={() => setScreen('monthlycalendar')}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.monthlyCalBtnIcon}>📅</Text>
+          <Text style={styles.monthlyCalBtnText}>월별 Task 조회</Text>
+          <Text style={styles.monthlyCalBtnArrow}>›</Text>
+        </TouchableOpacity>
 
         {/* ── Card 1 : Task 목록 ── */}
         <View style={styles.card}>
@@ -1726,16 +1944,6 @@ export default function App() {
           ))}
         </View>
 		
-		{/* ── 카테고리 별 task 관리 버튼 ── */}
-        <TouchableOpacity
-          style={[styles.detailBtn, { marginHorizontal: 24, marginTop: 8, marginBottom: 8 }]}
-          onPress={() => setScreen('categorymanage')}
-          activeOpacity={0.82}
-        >
-          <Text style={styles.detailBtnText}>카테고리 별 task 관리</Text>
-          <Text style={styles.detailBtnArrow}>→</Text>
-        </TouchableOpacity>
-		
         {/* ── Card 3 : 지난 Task 목록 ── */}
         <View style={styles.card}>
           <View style={styles.cardHeader}>
@@ -1762,7 +1970,8 @@ export default function App() {
             </TouchableOpacity>
           ))}
         </View>
-
+		
+		
       </ScrollView>
 
       <AddTaskModal
@@ -1915,6 +2124,35 @@ const styles = StyleSheet.create({
   },
   statLabelLight: {
     color: 'rgba(255,255,255,0.75)',
+  },
+
+  // Monthly calendar button
+  monthlyCalBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 24,
+    marginBottom: 16,
+    backgroundColor: '#141720',
+    borderRadius: 14,
+    paddingHorizontal: 18,
+    paddingVertical: 14,
+    borderWidth: 1,
+    borderColor: '#1F2435',
+    gap: 10,
+  },
+  monthlyCalBtnIcon: {
+    fontSize: 18,
+  },
+  monthlyCalBtnText: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  monthlyCalBtnArrow: {
+    fontSize: 20,
+    color: '#5B6CF8',
+    fontWeight: '700',
   },
 
   // Card
@@ -2713,5 +2951,134 @@ const sub = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 3,
     elevation: 4,
+  },
+});
+
+const cal = StyleSheet.create({
+  monthNav: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 24,
+    paddingVertical: 10,
+    marginBottom: 4,
+  },
+  navBtn: {
+    padding: 8,
+  },
+  navArrow: {
+    fontSize: 28,
+    color: '#5B6CF8',
+    fontWeight: '300',
+    lineHeight: 32,
+  },
+  monthTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    letterSpacing: -0.3,
+  },
+  calCard: {
+    marginHorizontal: 16,
+    backgroundColor: '#141720',
+    borderRadius: 20,
+    paddingHorizontal: 8,
+    paddingTop: 12,
+    paddingBottom: 8,
+    borderWidth: 1,
+    borderColor: '#1F2435',
+  },
+  weekRow: {
+    flexDirection: 'row',
+    marginBottom: 6,
+  },
+  weekCell: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 4,
+  },
+  weekText: {
+    fontSize: 12,
+    color: '#6B7280',
+    fontWeight: '600',
+  },
+  sunText: { color: '#EF4444' },
+  satText: { color: '#60A5FA' },
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  dayCell: {
+    width: '14.28%',
+    alignItems: 'center',
+    paddingVertical: 3,
+    position: 'relative',
+  },
+  dayCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  todayCircle: {
+    borderWidth: 2,
+    borderColor: '#5B6CF8',
+  },
+  selectedRing: {
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+  },
+  dayNum: {
+    fontSize: 14,
+    color: '#D1D5DB',
+    fontWeight: '400',
+  },
+  dayNumOnColor: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+  },
+  todayNum: {
+    color: '#5B6CF8',
+    fontWeight: '700',
+  },
+  sunNum: { color: '#EF4444' },
+  satNum: { color: '#60A5FA' },
+  countDot: {
+    position: 'absolute',
+    top: 2,
+    right: '10%',
+    width: 15,
+    height: 15,
+    borderRadius: 8,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  countDotText: {
+    fontSize: 9,
+    color: '#141720',
+    fontWeight: '700',
+  },
+  legend: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    gap: 18,
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  legendDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+  legendText: {
+    fontSize: 11,
+    color: '#9CA3AF',
+    fontWeight: '500',
   },
 });
