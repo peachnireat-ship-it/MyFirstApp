@@ -636,31 +636,33 @@ function TaskDetailScreen({ task, isPast, onBack, onSave, onDelete, onNavigateSu
             )}
           </View>
 
-          {/* 진척률 */}
-          <View style={[styles.detailFieldBlock, styles.rowDivider]}>
-            <Text style={styles.detailFieldLabel}>진척률</Text>
-            {isPast ? (
-              <Text style={styles.detailFieldValue}>{progress}%</Text>
-            ) : (
-              <View style={styles.progressInputRow}>
-                <TouchableOpacity
-                  style={styles.progressAdjBtn}
-                  onPress={() => setProgress(p => Math.max(0, p - 5))}
-                  activeOpacity={0.75}
-                >
-                  <Text style={styles.progressAdjBtnText}>−</Text>
-                </TouchableOpacity>
-                <Text style={styles.progressInputValue}>{progress}%</Text>
-                <TouchableOpacity
-                  style={styles.progressAdjBtn}
-                  onPress={() => setProgress(p => Math.min(100, p + 5))}
-                  activeOpacity={0.75}
-                >
-                  <Text style={styles.progressAdjBtnText}>+</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-          </View>
+          {/* 진척률 - 상세 task가 없을 때만 표시 */}
+          {!(task.subTasks && task.subTasks.length > 0) && (
+            <View style={[styles.detailFieldBlock, styles.rowDivider]}>
+              <Text style={styles.detailFieldLabel}>진척률</Text>
+              {isPast ? (
+                <Text style={styles.detailFieldValue}>{progress}%</Text>
+              ) : (
+                <View style={styles.progressInputRow}>
+                  <TouchableOpacity
+                    style={styles.progressAdjBtn}
+                    onPress={() => setProgress(p => Math.max(0, p - 5))}
+                    activeOpacity={0.75}
+                  >
+                    <Text style={styles.progressAdjBtnText}>−</Text>
+                  </TouchableOpacity>
+                  <Text style={styles.progressInputValue}>{progress}%</Text>
+                  <TouchableOpacity
+                    style={styles.progressAdjBtn}
+                    onPress={() => setProgress(p => Math.min(100, p + 5))}
+                    activeOpacity={0.75}
+                  >
+                    <Text style={styles.progressAdjBtnText}>+</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
+          )}
 
           {/* 특이사항 */}
           <View style={[styles.detailFieldBlock, styles.rowDivider]}>
