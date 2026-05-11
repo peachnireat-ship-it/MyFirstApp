@@ -75,6 +75,38 @@ function BlinkingBorderPill({ pillStyle, textStyle, text }) {
   );
 }
 
+function BlinkingDayCircle({ baseStyle, circleSize, children }) {
+  const blinkAnim = useRef(new Animated.Value(1)).current;
+  useEffect(() => {
+    const anim = Animated.loop(
+      Animated.sequence([
+        Animated.timing(blinkAnim, { toValue: 0, duration: 500, useNativeDriver: true }),
+        Animated.timing(blinkAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
+      ])
+    );
+    anim.start();
+    return () => anim.stop();
+  }, []);
+  return (
+    <View style={{ width: circleSize, height: circleSize }}>
+      <View style={[baseStyle, { width: circleSize, height: circleSize, borderRadius: circleSize / 2 }]}>
+        {children}
+      </View>
+      <Animated.View
+        pointerEvents="none"
+        style={{
+          position: 'absolute',
+          top: 0, left: 0, right: 0, bottom: 0,
+          borderRadius: circleSize / 2,
+          borderWidth: 2,
+          borderColor: '#FEFD48',
+          opacity: blinkAnim,
+        }}
+      />
+    </View>
+  );
+}
+
 function DatePickerField({ value, onChange, containerStyle }) {
   const [show, setShow] = useState(false);
   const date = parseDueDate(value);
@@ -1429,6 +1461,7 @@ function MonthlyCalendarScreen({ tasks, onBack, onTaskPress }) {
               const isSelected = dateStr === selectedDate;
               const dow = idx % 7;
               const count = tasksByDate[dateStr]?.length || 0;
+              const hasDueSoon = !!color && (tasksByDate[dateStr] || []).some(t => isDueSoon(t));
               return (
                 <TouchableOpacity
                   key={dateStr}
@@ -1436,22 +1469,41 @@ function MonthlyCalendarScreen({ tasks, onBack, onTaskPress }) {
                   onPress={() => setSelectedDate(selectedDate === dateStr ? null : dateStr)}
                   activeOpacity={0.7}
                 >
-                  <View style={[
-                    cal.dayCircle,
-                    { width: circleSize, height: circleSize, borderRadius: circleSize / 2 },
-                    color ? { backgroundColor: color } : null,
-                    isToday && !color ? cal.todayCircle : null,
-                    isSelected ? cal.selectedRing : null,
-                  ]}>
-                    <Text style={[
-                      cal.dayNum,
-                      { fontSize: Math.min(Math.floor(circleSize * 0.38), 16) },
-                      dow === 0 ? cal.sunNum : null,
-                      dow === 6 ? cal.satNum : null,
-                      color ? cal.dayNumOnColor : null,
-                      isToday && !color ? cal.todayNum : null,
-                    ]}>{day}</Text>
-                  </View>
+                  {hasDueSoon ? (
+                    <BlinkingDayCircle
+                      baseStyle={[
+                        cal.dayCircle,
+                        { backgroundColor: color },
+                        isSelected ? cal.selectedRing : null,
+                      ]}
+                      circleSize={circleSize}
+                    >
+                      <Text style={[
+                        cal.dayNum,
+                        { fontSize: Math.min(Math.floor(circleSize * 0.38), 16) },
+                        dow === 0 ? cal.sunNum : null,
+                        dow === 6 ? cal.satNum : null,
+                        cal.dayNumOnColor,
+                      ]}>{day}</Text>
+                    </BlinkingDayCircle>
+                  ) : (
+                    <View style={[
+                      cal.dayCircle,
+                      { width: circleSize, height: circleSize, borderRadius: circleSize / 2 },
+                      color ? { backgroundColor: color } : null,
+                      isToday && !color ? cal.todayCircle : null,
+                      isSelected ? cal.selectedRing : null,
+                    ]}>
+                      <Text style={[
+                        cal.dayNum,
+                        { fontSize: Math.min(Math.floor(circleSize * 0.38), 16) },
+                        dow === 0 ? cal.sunNum : null,
+                        dow === 6 ? cal.satNum : null,
+                        color ? cal.dayNumOnColor : null,
+                        isToday && !color ? cal.todayNum : null,
+                      ]}>{day}</Text>
+                    </View>
+                  )}
                   {count > 1 && (
                     <View style={cal.countDot}>
                       <Text style={cal.countDotText}>{count}</Text>
