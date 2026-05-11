@@ -1678,15 +1678,20 @@ export default function App() {
             <Text style={styles.cardTitle}>Task별 진척률</Text>
           </View>
 
-          {[...tasks].sort((a, b) => {
+          {tasks.every(t => t.status === '완료') && (
+            <Text style={styles.emptyText}>완료되지 않은 Task가 없습니다.</Text>
+          )}
+          {[...tasks]
+            .filter(t => t.status !== '완료')
+            .sort((a, b) => {
               const aDone = calcTaskProgress(a) >= 100 ? 1 : 0;
               const bDone = calcTaskProgress(b) >= 100 ? 1 : 0;
               if (aDone !== bDone) return aDone - bDone;
               return parseDueDate(a.dueDate) - parseDueDate(b.dueDate);
-            }).map((task, idx) => (
+            }).map((task, idx, arr) => (
             <View
               key={task.id}
-              style={idx < tasks.length - 1 ? styles.progressItemGap : null}
+              style={idx < arr.length - 1 ? styles.progressItemGap : null}
             >
               <View style={styles.progressLabelRow}>
                 <Text style={styles.progressLabel}>{task.title}</Text>
