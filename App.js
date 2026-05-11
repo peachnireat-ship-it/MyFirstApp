@@ -1484,6 +1484,7 @@ function MonthlyCalendarScreen({ tasks, onBack, onTaskPress }) {
                 <Text style={styles.countBadgeText}>{selectedTasks.length}</Text>
               </View>
             </View>
+			
             {selectedTasks.length === 0 ? (
               <Text style={styles.emptyText}>마감 Task가 없습니다.</Text>
             ) : (
@@ -1507,21 +1508,41 @@ function MonthlyCalendarScreen({ tasks, onBack, onTaskPress }) {
                       <Text style={styles.taskMeta}>{task.category ? `${task.category} · ` : ''}{task.dueDate} 마감</Text>
                     </View>
                   </View>
-                  <View style={[
-                    styles.pill,
-                    task.status === '진행중' ? styles.pillGreen
-                    : task.status === '완료' ? styles.pillBlue
-                    : task.status === '지연' ? styles.pillRed
-                    : styles.pillAmber,
-                  ]}>
-                    <Text style={[
-                      styles.pillText,
-                      task.status === '진행중' ? styles.pillTextGreen
-                      : task.status === '완료' ? styles.pillTextBlue
-                      : task.status === '지연' ? styles.pillTextRed
-                      : styles.pillTextAmber,
-                    ]}>{task.status}</Text>
-                  </View>
+                  {isDueSoon(task) ? (
+                    <BlinkingBorderPill
+                      pillStyle={[
+                        styles.pill,
+                        task.status === '진행중' ? styles.pillGreen
+                        : task.status === '완료' ? styles.pillBlue
+                        : task.status === '지연' ? styles.pillRed
+                        : styles.pillAmber,
+                      ]}
+                      textStyle={[
+                        styles.pillText,
+                        task.status === '진행중' ? styles.pillTextGreen
+                        : task.status === '완료' ? styles.pillTextBlue
+                        : task.status === '지연' ? styles.pillTextRed
+                        : styles.pillTextAmber,
+                      ]}
+                      text={task.status}
+                    />
+                  ) : (
+                    <View style={[
+                      styles.pill,
+                      task.status === '진행중' ? styles.pillGreen
+                      : task.status === '완료' ? styles.pillBlue
+                      : task.status === '지연' ? styles.pillRed
+                      : styles.pillAmber,
+                    ]}>
+                      <Text style={[
+                        styles.pillText,
+                        task.status === '진행중' ? styles.pillTextGreen
+                        : task.status === '완료' ? styles.pillTextBlue
+                        : task.status === '지연' ? styles.pillTextRed
+                        : styles.pillTextAmber,
+                      ]}>{task.status}</Text>
+                    </View>
+                  )}
                 </TouchableOpacity>
               ))
             )}
