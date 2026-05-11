@@ -1104,6 +1104,7 @@ function NameInputScreen({ onSubmit }) {
 function SubTaskScreen({ task, onBack, onSave }) {
   const [subTasks, setSubTasks] = useState(task.subTasks || []);
   const [subTaskInput, setSubTaskInput] = useState('');
+  const sliderWidths = useRef({});
 
   const addSubTask = () => {
     if (!subTaskInput.trim()) return;
@@ -1121,6 +1122,12 @@ function SubTaskScreen({ task, onBack, onSave }) {
 
   const updateSubTaskProgress = (id, progress) => {
     setSubTasks(prev => prev.map(st => st.id === id ? { ...st, progress } : st));
+  };
+
+  const handleSliderMove = (id, locationX) => {
+    const width = sliderWidths.current[id] || 1;
+    const pct = Math.max(0, Math.min(100, Math.round((locationX / width) * 100)));
+    updateSubTaskProgress(id, pct);
   };
 
   const handleSave = () => {
@@ -1170,17 +1177,19 @@ function SubTaskScreen({ task, onBack, onSave }) {
                 </View>
                 <Text style={sub.progressPct}>{st.progress || 0}%</Text>
               </View>
-              <View style={sub.progressBtns}>
-                {[0, 25, 50, 75, 100].map(p => (
-                  <TouchableOpacity
-                    key={p}
-                    style={[sub.pBtn, (st.progress || 0) === p && sub.pBtnActive]}
-                    onPress={() => updateSubTaskProgress(st.id, p)}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={[sub.pBtnText, (st.progress || 0) === p && sub.pBtnTextActive]}>{p}%</Text>
-                  </TouchableOpacity>
-                ))}
+              <View style={sub.sliderRow}>
+                <View
+                  style={sub.sliderTrack}
+                  onLayout={(e) => { sliderWidths.current[st.id] = e.nativeEvent.layout.width; }}
+                  onStartShouldSetResponder={() => true}
+                  onMoveShouldSetResponder={() => true}
+                  onResponderGrant={(e) => handleSliderMove(st.id, e.nativeEvent.locationX)}
+                  onResponderMove={(e) => handleSliderMove(st.id, e.nativeEvent.locationX)}
+                >
+                  <View style={sub.sliderTrackBg} />
+                  <View style={[sub.sliderFill, { width: `${st.progress || 0}%` }]} />
+                  <View style={[sub.sliderThumb, { left: `${st.progress || 0}%` }]} />
+                </View>
               </View>
             </View>
           ))}
@@ -2551,30 +2560,43 @@ const sub = StyleSheet.create({
     width: 30,
     textAlign: 'right',
   },
-  progressBtns: {
-    flexDirection: 'row',
+  sliderRow: {
     marginLeft: 32,
-    gap: 5,
-    marginBottom: 2,
+    marginRight: 4,
+    marginBottom: 6,
+    marginTop: 2,
   },
-  pBtn: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
+  sliderTrack: {
+    height: 20,
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  sliderTrackBg: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 8,
+    height: 4,
     backgroundColor: '#1F2435',
-    borderWidth: 1,
-    borderColor: '#2A2F45',
+    borderRadius: 2,
   },
-  pBtnActive: {
-    backgroundColor: 'rgba(91,108,248,0.2)',
-    borderColor: '#5B6CF8',
+  sliderFill: {
+    position: 'absolute',
+    left: 0,
+    top: 8,
+    height: 4,
+    backgroundColor: '#5B6CF8',
+    borderRadius: 2,
   },
-  pBtnText: {
-    fontSize: 11,
-    color: '#6B7280',
-    fontWeight: '600',
-  },
-  pBtnTextActive: {
-    color: '#5B6CF8',
+  sliderThumb: {
+    position: 'absolute',
+    top: 4,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#5B6CF8',
+    marginLeft: -6,
+    borderWidth: 2,
+    borderColor: '#fff',
   },
 });
