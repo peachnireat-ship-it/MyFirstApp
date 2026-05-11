@@ -115,6 +115,7 @@ const CATEGORIES = ['업무', '개인', '학습', '기타', 'test'];
 
 function EditTaskModal({ visible, task, onClose, onSave }) {
   const [title, setTitle] = useState('');
+  const [startDate, setStartDate] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [status, setStatus] = useState('진행중');
   const [category, setCategory] = useState('');
@@ -125,6 +126,7 @@ function EditTaskModal({ visible, task, onClose, onSave }) {
   useEffect(() => {
     if (task) {
       setTitle(task.title);
+      setStartDate(task.startDate || '');
       setDueDate(task.dueDate);
       setStatus(task.status);
       setCategory(task.category || '');
@@ -172,6 +174,8 @@ function EditTaskModal({ visible, task, onClose, onSave }) {
             onChangeText={setTitle}
             placeholderTextColor="#6B7280"
           />
+          <Text style={ms.label}>시작일</Text>
+          <DatePickerField value={startDate} onChange={setStartDate} />
           <Text style={ms.label}>마감일</Text>
           <DatePickerField value={dueDate} onChange={setDueDate} />
           <Text style={ms.label}>상태</Text>
@@ -247,7 +251,7 @@ function EditTaskModal({ visible, task, onClose, onSave }) {
             </TouchableOpacity>
             <TouchableOpacity
               style={ms.saveBtn}
-              onPress={() => onSave(task.id, { title, dueDate, status: isPastDueModal && status !== '완료' ? '지연' : status, category, subTasks })}
+              onPress={() => onSave(task.id, { title, startDate, dueDate, status: isPastDueModal && status !== '완료' ? '지연' : status, category, subTasks })}
               activeOpacity={0.8}
             >
               <Text style={ms.saveText}>저장</Text>
@@ -262,6 +266,7 @@ function EditTaskModal({ visible, task, onClose, onSave }) {
 
 function AddTaskModal({ visible, onClose, onAdd }) {
   const [title, setTitle] = useState('');
+  const [startDate, setStartDate] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [status, setStatus] = useState('진행중');
   const [category, setCategory] = useState('');
@@ -273,8 +278,9 @@ function AddTaskModal({ visible, onClose, onAdd }) {
 
   const handleAdd = () => {
     if (!title.trim()) return;
-    onAdd({ title: title.trim(), dueDate, status, category, notifEnabled, notifOffset, notifHour });
+    onAdd({ title: title.trim(), startDate, dueDate, status, category, notifEnabled, notifOffset, notifHour });
     setTitle('');
+    setStartDate('');
     setDueDate('');
     setStatus('진행중');
     setCategory('');
@@ -296,6 +302,8 @@ function AddTaskModal({ visible, onClose, onAdd }) {
             placeholder="Task 이름을 입력하세요"
             placeholderTextColor="#6B7280"
           />
+          <Text style={ms.label}>시작일</Text>
+          <DatePickerField value={startDate} onChange={setStartDate} />
           <Text style={ms.label}>마감일</Text>
           <DatePickerField value={dueDate} onChange={setDueDate} />
           <Text style={ms.label}>상태</Text>
@@ -459,6 +467,7 @@ function InProgressScreen({ onBack, tasks, onUpdateTask }) {
 }
 
 function TaskDetailScreen({ task, isPast, onBack, onSave, onDelete, onNavigateSubTasks }) {
+  const [startDate, setStartDate] = useState(task.startDate || '');
   const [dueDate, setDueDate] = useState(task.dueDate || '');
   const [status, setStatus] = useState(task.status || '진행중');
   const [category, setCategory] = useState(task.category || '');
@@ -531,7 +540,7 @@ function TaskDetailScreen({ task, isPast, onBack, onSave, onDelete, onNavigateSu
   }; */
 
   const handleSave = async () => {
-    onSave(task.id, { dueDate, status, category, notes, progress });
+    onSave(task.id, { startDate, dueDate, status, category, notes, progress });
   };
 
   const dotStyle =
@@ -589,10 +598,18 @@ function TaskDetailScreen({ task, isPast, onBack, onSave, onDelete, onNavigateSu
           {/* 등록일 */}
           <View style={[styles.detailFieldBlock, styles.rowDivider]}>
             <Text style={styles.detailFieldLabel}>등록일</Text>
-            <Text style={styles.detailFieldValueMuted}>{task.registeredAt ? formatDueDate(parseDueDate(task.registeredAt)) : '-'}</Text>
+            <Text style={styles.detailFieldValueMuted}>{task.registeredAt || '-'}</Text>
           </View>
 
-          
+          {/* 시작일 */}
+          <View style={[styles.detailFieldBlock, styles.rowDivider]}>
+            <Text style={styles.detailFieldLabel}>시작일</Text>
+            {isPast ? (
+              <Text style={styles.detailFieldValue}>{startDate || '-'}</Text>
+            ) : (
+              <DatePickerField value={startDate} onChange={setStartDate} containerStyle={styles.detailInput} />
+            )}
+          </View>
 
           {/* 마감일 */}
           <View style={[styles.detailFieldBlock, styles.rowDivider]}>
