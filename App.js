@@ -1659,7 +1659,7 @@ export default function App() {
             <Text style={styles.cardTitle}>Task별 진척률</Text>
           </View>
 
-          {tasks.map((task, idx) => (
+          {[...tasks].sort((a, b) => parseDueDate(a.dueDate) - parseDueDate(b.dueDate)).map((task, idx) => (
             <View
               key={task.id}
               style={idx < tasks.length - 1 ? styles.progressItemGap : null}
