@@ -957,7 +957,7 @@ function CategoryDetailScreen({ category, tasks, onBack, onTaskPress }) {
   const totalCompleted = catTasks.filter(t => t.status === '완료').length;
   const totalAll = catTasks.length;
   const avgAchievement = totalAll > 0
-    ? Math.round(catTasks.reduce((sum, t) => sum + (t.progress ?? 0), 0) / totalAll)
+    ? Math.round(catTasks.reduce((sum, t) => sum + calcTaskProgress(t), 0) / totalAll)
     : 0;
 
   const pastTasksList = catTasks
