@@ -98,7 +98,7 @@ function BlinkingDayCircle({ baseStyle, circleSize, children }) {
           position: 'absolute',
           top: 0, left: 0, right: 0, bottom: 0,
           borderRadius: circleSize / 2,
-          borderWidth: 2,
+          borderWidth: 4,
           borderColor: '#FEFD48',
           opacity: blinkAnim,
         }}
