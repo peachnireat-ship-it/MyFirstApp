@@ -713,25 +713,8 @@ function TaskDetailScreen({ task, isPast, onBack, onSave, onDelete, onNavigateSu
             </View>
           )}
 
-          {/* 특이사항 */}
-          <View style={[styles.detailFieldBlock, styles.rowDivider]}>
-            <Text style={styles.detailFieldLabel}>특이사항</Text>
-            {isPast ? (
-              <Text style={styles.detailFieldValue}>{notes || '-'}</Text>
-            ) : (
-              <TextInput
-                style={[ms.input, styles.detailInput, styles.detailNotesInput]}
-                value={notes}
-                onChangeText={setNotes}
-                placeholder="특이사항을 입력하세요"
-                placeholderTextColor="#4B5563"
-                multiline
-              />
-            )}
-          </View>
-
           {/* 세부 Task */}
-          <View style={styles.detailFieldBlock}>
+          <View style={[styles.detailFieldBlock, styles.rowDivider]}>
             <Text style={styles.detailFieldLabel}>세부 Task</Text>
             <TouchableOpacity
               style={[ms.statusBtn, { paddingHorizontal: 14 }]}
@@ -745,8 +728,27 @@ function TaskDetailScreen({ task, isPast, onBack, onSave, onDelete, onNavigateSu
               </Text>
             </TouchableOpacity>
           </View>
-        </View>
+		  
+		  {/* 특이사항 */}
+		  <View style={[styles.detailFieldBlock, styles.rowDivider]}>
+			<Text style={styles.detailFieldLabel}>특이사항</Text>
+			{isPast ? (
+			  <Text style={styles.detailFieldValue}>{notes || '-'}</Text>
+			) : (
+			  <TextInput
+				style={[ms.input, styles.detailInput, styles.detailNotesInput]}
+				value={notes}
+				onChangeText={setNotes}
+				placeholder="특이사항을 입력하세요"
+				placeholderTextColor="#4B5563"
+				multiline
+			  />
+			)}
+		  </View>
 
+        </View>
+		
+		
         {!isPast && (
           <View style={styles.detailBtnRow}>
             <TouchableOpacity
