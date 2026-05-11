@@ -1345,6 +1345,7 @@ function MonthlyCalendarScreen({ tasks, onBack, onTaskPress }) {
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
   const [currentMonth, setCurrentMonth] = useState(today.getMonth());
   const [selectedDate, setSelectedDate] = useState(null);
+  const [gridHeight, setGridHeight] = useState(0);
 
   const tasksByDate = {};
   tasks.forEach(task => {
@@ -1381,12 +1382,16 @@ function MonthlyCalendarScreen({ tasks, onBack, onTaskPress }) {
   for (let i = 0; i < firstDayOfWeek; i++) cells.push(null);
   for (let d = 1; d <= daysInMonth; d++) cells.push(d);
 
+  const numRows = Math.ceil(cells.length / 7);
+  const cellH = gridHeight > 0 ? Math.floor(gridHeight / numRows) : 52;
+  const circleSize = Math.min(Math.floor(cellH * 0.72), 52);
+
   const selectedTasks = selectedDate ? (tasksByDate[selectedDate] || []) : [];
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar style="light" />
-      <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <View style={{ flex: 1 }}>
         <View style={styles.screenHeader}>
           <TouchableOpacity onPress={onBack} style={styles.backBtn} activeOpacity={0.7}>
             <Text style={styles.backBtnText}>← 뒤로</Text>
@@ -1412,9 +1417,12 @@ function MonthlyCalendarScreen({ tasks, onBack, onTaskPress }) {
               </View>
             ))}
           </View>
-          <View style={cal.grid}>
+          <View
+            style={[cal.grid, { flex: 1 }]}
+            onLayout={(e) => setGridHeight(e.nativeEvent.layout.height)}
+          >
             {cells.map((day, idx) => {
-              if (!day) return <View key={`e-${idx}`} style={cal.dayCell} />;
+              if (!day) return <View key={`e-${idx}`} style={[cal.dayCell, { height: cellH }]} />;
               const dateStr = `${currentYear}-${monthStr}-${String(day).padStart(2, '0')}`;
               const color = getDayColor(dateStr);
               const isToday = dateStr === todayStr;
@@ -1424,18 +1432,20 @@ function MonthlyCalendarScreen({ tasks, onBack, onTaskPress }) {
               return (
                 <TouchableOpacity
                   key={dateStr}
-                  style={cal.dayCell}
+                  style={[cal.dayCell, { height: cellH }]}
                   onPress={() => setSelectedDate(selectedDate === dateStr ? null : dateStr)}
                   activeOpacity={0.7}
                 >
                   <View style={[
                     cal.dayCircle,
+                    { width: circleSize, height: circleSize, borderRadius: circleSize / 2 },
                     color ? { backgroundColor: color } : null,
                     isToday && !color ? cal.todayCircle : null,
                     isSelected ? cal.selectedRing : null,
                   ]}>
                     <Text style={[
                       cal.dayNum,
+                      { fontSize: Math.min(Math.floor(circleSize * 0.38), 16) },
                       dow === 0 ? cal.sunNum : null,
                       dow === 6 ? cal.satNum : null,
                       color ? cal.dayNumOnColor : null,
@@ -1463,8 +1473,12 @@ function MonthlyCalendarScreen({ tasks, onBack, onTaskPress }) {
         </View>
 
         {selectedDate && (
-          <View style={[styles.card, { marginTop: 4 }]}>
-            <View style={styles.cardHeader}>
+          <ScrollView
+            style={cal.taskPanel}
+            contentContainerStyle={{ paddingBottom: 12 }}
+            showsVerticalScrollIndicator={false}
+          >
+            <View style={cal.taskPanelHeader}>
               <Text style={styles.cardTitle}>{selectedDate}</Text>
               <View style={styles.countBadge}>
                 <Text style={styles.countBadgeText}>{selectedTasks.length}</Text>
@@ -1511,9 +1525,9 @@ function MonthlyCalendarScreen({ tasks, onBack, onTaskPress }) {
                 </TouchableOpacity>
               ))
             )}
-          </View>
+          </ScrollView>
         )}
-      </ScrollView>
+      </View>
     </SafeAreaView>
   );
 }
@@ -2979,12 +2993,13 @@ const cal = StyleSheet.create({
     letterSpacing: -0.3,
   },
   calCard: {
+    flex: 1,
     marginHorizontal: 16,
     backgroundColor: '#141720',
     borderRadius: 20,
     paddingHorizontal: 8,
     paddingTop: 12,
-    paddingBottom: 8,
+    paddingBottom: 4,
     borderWidth: 1,
     borderColor: '#1F2435',
   },
@@ -3007,17 +3022,15 @@ const cal = StyleSheet.create({
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    alignContent: 'flex-start',
   },
   dayCell: {
     width: '14.28%',
     alignItems: 'center',
-    paddingVertical: 3,
+    justifyContent: 'center',
     position: 'relative',
   },
   dayCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -3080,5 +3093,24 @@ const cal = StyleSheet.create({
     fontSize: 11,
     color: '#9CA3AF',
     fontWeight: '500',
+  },
+  taskPanel: {
+    maxHeight: 220,
+    marginHorizontal: 16,
+    marginBottom: 8,
+    backgroundColor: '#141720',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#1F2435',
+    paddingHorizontal: 16,
+    paddingTop: 4,
+  },
+  taskPanelHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#1F2435',
+    marginBottom: 4,
   },
 });
