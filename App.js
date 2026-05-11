@@ -1683,12 +1683,8 @@ export default function App() {
           )}
           {[...tasks]
             .filter(t => t.status !== '완료')
-            .sort((a, b) => {
-              const aDone = calcTaskProgress(a) >= 100 ? 1 : 0;
-              const bDone = calcTaskProgress(b) >= 100 ? 1 : 0;
-              if (aDone !== bDone) return aDone - bDone;
-              return parseDueDate(a.dueDate) - parseDueDate(b.dueDate);
-            }).map((task, idx, arr) => (
+            .sort((a, b) => calcTaskProgress(b) - calcTaskProgress(a))
+            .map((task, idx, arr) => (
             <View
               key={task.id}
               style={idx < arr.length - 1 ? styles.progressItemGap : null}
