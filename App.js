@@ -1183,6 +1183,8 @@ function SubTaskScreen({ task, onBack, onSave }) {
   const [subTasks, setSubTasks] = useState(task.subTasks || []);
   const [subTaskInput, setSubTaskInput] = useState('');
   const sliderWidths = useRef({});
+  const sliderRefs = useRef({});
+  const sliderPageX = useRef({});
 
   const addSubTask = () => {
     if (!subTaskInput.trim()) return;
@@ -1202,10 +1204,25 @@ function SubTaskScreen({ task, onBack, onSave }) {
     setSubTasks(prev => prev.map(st => st.id === id ? { ...st, progress } : st));
   };
 
-  const handleSliderMove = (id, locationX) => {
+  const calcSliderProgress = (id, pageX) => {
+    const trackX = sliderPageX.current[id] ?? 0;
     const width = sliderWidths.current[id] || 1;
-    const pct = Math.max(0, Math.min(100, Math.round((locationX / width) * 100)));
-    updateSubTaskProgress(id, pct);
+    return Math.max(0, Math.min(100, Math.round(((pageX - trackX) / width) * 100)));
+  };
+
+  const handleSliderGrant = (id, pageX) => {
+    const ref = sliderRefs.current[id];
+    if (ref) {
+      ref.measure((x, y, w, h, px) => {
+        sliderPageX.current[id] = px;
+        sliderWidths.current[id] = w;
+      });
+    }
+    updateSubTaskProgress(id, calcSliderProgress(id, pageX));
+  };
+
+  const handleSliderMove = (id, pageX) => {
+    updateSubTaskProgress(id, calcSliderProgress(id, pageX));
   };
 
   const handleSave = () => {
@@ -1251,12 +1268,21 @@ function SubTaskScreen({ task, onBack, onSave }) {
               </View>
               <View style={sub.sliderRow}>
                 <View
+                  ref={(r) => { sliderRefs.current[st.id] = r; }}
                   style={sub.sliderTrack}
-                  onLayout={(e) => { sliderWidths.current[st.id] = e.nativeEvent.layout.width; }}
+                  onLayout={(e) => {
+                    sliderWidths.current[st.id] = e.nativeEvent.layout.width;
+                    if (sliderRefs.current[st.id]) {
+                      sliderRefs.current[st.id].measure((x, y, w, h, px) => {
+                        sliderPageX.current[st.id] = px;
+                      });
+                    }
+                  }}
                   onStartShouldSetResponder={() => true}
                   onMoveShouldSetResponder={() => true}
-                  onResponderGrant={(e) => handleSliderMove(st.id, e.nativeEvent.locationX)}
-                  onResponderMove={(e) => handleSliderMove(st.id, e.nativeEvent.locationX)}
+                  onResponderGrant={(e) => handleSliderGrant(st.id, e.nativeEvent.pageX)}
+                  onResponderMove={(e) => handleSliderMove(st.id, e.nativeEvent.pageX)}
+                  onResponderRelease={(e) => handleSliderMove(st.id, e.nativeEvent.pageX)}
                 >
                   <View style={sub.sliderTrackBg} />
                   <View style={[sub.sliderFill, { width: `${st.progress || 0}%` }]} />
@@ -2651,7 +2677,7 @@ const sub = StyleSheet.create({
   },
   sliderTrack: {
     flex: 1,
-    height: 20,
+    height: 36,
     justifyContent: 'center',
     position: 'relative',
   },
@@ -2659,7 +2685,7 @@ const sub = StyleSheet.create({
     position: 'absolute',
     left: 0,
     right: 0,
-    top: 8,
+    top: 16,
     height: 4,
     backgroundColor: '#1F2435',
     borderRadius: 2,
@@ -2667,20 +2693,25 @@ const sub = StyleSheet.create({
   sliderFill: {
     position: 'absolute',
     left: 0,
-    top: 8,
+    top: 16,
     height: 4,
     backgroundColor: '#5B6CF8',
     borderRadius: 2,
   },
   sliderThumb: {
     position: 'absolute',
-    top: 4,
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+    top: 8,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     backgroundColor: '#5B6CF8',
-    marginLeft: -6,
+    marginLeft: -10,
     borderWidth: 2,
     borderColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+    elevation: 4,
   },
 });
