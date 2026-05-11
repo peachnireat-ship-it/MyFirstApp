@@ -1249,12 +1249,6 @@ function SubTaskScreen({ task, onBack, onSave }) {
                   <Text style={sub.delText}>×</Text>
                 </TouchableOpacity>
               </View>
-              <View style={sub.progressRow}>
-                <View style={sub.progressBarBg}>
-                  <View style={[sub.progressBarFill, { width: `${st.progress || 0}%` }]} />
-                </View>
-                <Text style={sub.progressPct}>{st.progress || 0}%</Text>
-              </View>
               <View style={sub.sliderRow}>
                 <View
                   style={sub.sliderTrack}
@@ -1268,6 +1262,7 @@ function SubTaskScreen({ task, onBack, onSave }) {
                   <View style={[sub.sliderFill, { width: `${st.progress || 0}%` }]} />
                   <View style={[sub.sliderThumb, { left: `${st.progress || 0}%` }]} />
                 </View>
+                <Text style={sub.progressPct}>{st.progress || 0}%</Text>
               </View>
             </View>
           ))}
@@ -2639,25 +2634,6 @@ const sub = StyleSheet.create({
     paddingBottom: 10,
     marginBottom: 4,
   },
-  progressRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginLeft: 32,
-    gap: 8,
-    marginTop: 5,
-    marginBottom: 5,
-  },
-  progressBarBg: {
-    flex: 1,
-    height: 4,
-    backgroundColor: '#1F2435',
-    borderRadius: 2,
-  },
-  progressBarFill: {
-    height: 4,
-    backgroundColor: '#5B6CF8',
-    borderRadius: 2,
-  },
   progressPct: {
     fontSize: 11,
     color: '#6B7280',
@@ -2665,12 +2641,16 @@ const sub = StyleSheet.create({
     textAlign: 'right',
   },
   sliderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginLeft: 32,
     marginRight: 4,
     marginBottom: 6,
-    marginTop: 2,
+    marginTop: 5,
+    gap: 8,
   },
   sliderTrack: {
+    flex: 1,
     height: 20,
     justifyContent: 'center',
     position: 'relative',
